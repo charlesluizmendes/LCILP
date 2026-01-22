@@ -369,7 +369,7 @@ def get_subgraphs(all_links, adj_list, dgl_adj_list, max_node_label_value, id2en
 
         if rel_link.squeeze().nelement() == 0:
             # subgraph.add_edge(0, 1, {'type': torch.tensor([rel]), 'label': torch.tensor([rel])})
-            subgraph.add_edge(0, 1)
+            subgraph.add_edges(0, 1)
             subgraph.edata['type'][-1] = torch.tensor(rel).type(torch.LongTensor)
             subgraph.edata['label'][-1] = torch.tensor(rel).type(torch.LongTensor)
 
