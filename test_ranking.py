@@ -320,7 +320,7 @@ def ssp_multigraph_to_dgl(graph, n_feats=None):
 
     # make dgl graph
     g_dgl = dgl.DGLGraph(multigraph=True)
-    g_dgl.from_networkx(g_nx, edge_attrs=['type'])
+    g_dgl = dgl.from_networkx(g_nx, edge_attrs=['type'])
     # add node features
     if n_feats is not None:
         g_dgl.ndata['feat'] = torch.tensor(n_feats)
@@ -357,11 +357,14 @@ def get_subgraphs(all_links, adj_list, dgl_adj_list, max_node_label_value, id2en
         head, tail, rel = link[0], link[1], link[2]
         nodes, node_labels = subgraph_extraction_labeling((head, tail), rel, adj_list, h=params_.hop, enclosing_sub_graph=params.enclosing_sub_graph, max_node_label_value=max_node_label_value, local_clustering=params.local_clustering)
 
-        subgraph = dgl.DGLGraph(dgl_adj_list.subgraph(nodes))
-        subgraph.edata['type'] = dgl_adj_list.edata['type'][dgl_adj_list.subgraph(nodes).parent_eid]
+        subgraph = dgl_adj_list.subgraph(nodes)
+        subgraph.edata['type'] = dgl_adj_list.edata['type'][subgraph.edata[dgl.EID]]
         subgraph.edata['label'] = torch.tensor(rel * np.ones(subgraph.edata['type'].shape), dtype=torch.long)
 
-        edges_btw_roots = subgraph.edge_id(0, 1, return_array=True)
+        if subgraph.has_edges_between(0, 1):
+            edges_btw_roots = subgraph.edge_ids(0, 1)
+        else:
+            edges_btw_roots = torch.tensor([]).long()
         rel_link = np.nonzero(subgraph.edata['type'][edges_btw_roots] == rel)
 
         if rel_link.squeeze().nelement() == 0:

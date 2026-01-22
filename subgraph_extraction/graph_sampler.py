@@ -92,7 +92,17 @@ def links2subgraphs(A, graphs, params, max_label_value=None):
         with mp.Pool(processes=None, initializer=intialize_worker, initargs=(A, params, max_label_value)) as p:
             args_ = zip(range(len(links)), links, g_labels)
             for (str_id, datum) in tqdm(p.imap(extract_save_subgraph, args_), total=len(links)):
-                max_n_label['value'] = np.maximum(np.max(datum['n_labels'], axis=0), max_n_label['value'])
+                
+                current_max = np.max(datum['n_labels'], axis=0)
+                if len(current_max) != len(max_n_label['value']):
+                    new_size = max(len(current_max), len(max_n_label['value']))
+                    new_max = np.zeros(new_size, dtype=current_max.dtype)
+                    new_max[:len(max_n_label['value'])] = max_n_label['value']
+                    new_max[:len(current_max)] = np.maximum(new_max[:len(current_max)], current_max)
+                    max_n_label['value'] = new_max
+                else:
+                    max_n_label['value'] = np.maximum(current_max, max_n_label['value'])
+
                 subgraph_sizes.append(datum['subgraph_size'])
                 enc_ratios.append(datum['enc_ratio'])
                 num_pruned_nodes.append(datum['num_pruned_nodes'])
